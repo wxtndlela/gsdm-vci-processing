@@ -1,0 +1,7 @@
+pandas
+opencv-python
+openpyxl
+flask
+flask-cors
+requests
+firebase-admin
