@@ -4,7 +4,6 @@ import json
 from http.server import SimpleHTTPRequestHandler
 from http.server import HTTPServer
 from urllib.parse import urlparse
-from cv2 import sqrt
 import os
 import openpyxl
 import numpy as np
