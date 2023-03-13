@@ -24,6 +24,11 @@ import requests
 import os
 import time
 
+from google.oauth2 import service_account
+import google.auth
+from google.auth.transport.requests import Request
+import requests
+
 
 #Access Firebase DB
 cred = credentials.Certificate("gsdm-smart-dashboard-firebase-adminsdk-3dc2m-da7a791029.json")
@@ -103,7 +108,11 @@ def process_file(url):
         ['SKID_RESISTANCE_DEG','DEG',3.0, 4.0, 3.0]]
     
     def get_val(n_index, column_name):
-        return vci_data[column_name][n_index]
+        column_name = column_name.lower()
+        if column_name in vci_data.columns:
+            return vci_data[column_name][n_index]
+        else:
+            return 0.0
 
     def check_weightvalue_if_found(col_name):
         for col_n in col_names:
@@ -127,6 +136,9 @@ def process_file(url):
         for column_name in col_names:
 
             s = str(column_name[0])
+            s = s.upper()
+            
+            #print("OUT:",s)
 
             _fn_ext = 0.0
             _fn_deg = 0.0
@@ -165,6 +177,7 @@ def process_file(url):
 
 
                 _En = get_val(n_index, _ext)
+                
 
                 #If its EDGE BREAK, RIDING QUALITY OR SKID RESISTANCE
                 if _ext == 'EDGE_BREAK_EXT':
@@ -252,7 +265,7 @@ def process_file(url):
         print(out.format(Fnsum=Fns, Fnmaxsum=Fnxs, C=C, VCIp=VCIp, VCI=VCI)) 
 
         #Update VCI Value on table
-        vci_data.loc[i, ['VCI']] = [VCI]
+        vci_data.loc[i, ['vci']] = [VCI]
         i+=1
         ind+=1
 
@@ -274,17 +287,17 @@ def process_file(url):
         doc.update(field_updates) 
 
     storage_client = storage.Client.from_service_account_json('gsdm-smart-dashboard-firebase-adminsdk-3dc2m-da7a791029.json', project='gsdm-smart-dashboard')
-
-    bucket = storage_client.bucket('gsdm-smart-dashboard.appspot.com')
-    blob = bucket.blob('road-inspection/vci/'+file_path)
-    blob.upload_from_filename(file_path)
-
-    # Opt : if you want to make public access from the URL
-    blob.make_public()
-
     now = datetime.now()
 
     s1 = now.strftime("%Y%m%d%H%M%S")
+    
+    bucket = storage_client.bucket('gsdm-smart-dashboard.appspot.com')
+    blob = bucket.blob('road-inspection/vci/'+s1+'_'+file_path)
+    blob.upload_from_filename(file_path)
+    
+
+    # Opt : if you want to make public access from the URL
+    blob.make_public()
 
     print("[INFO]...vci file upload completed")
     print("[INFO]...updating vci records...")
@@ -313,6 +326,8 @@ def process_file(url):
         print(f'{file_path} does not exist.')
 
     print("[INFO] VCI Update Completed!")
+    
+    
 
     #Update VCI data
     col_ref = db.collection('vci') 
